@@ -1,0 +1,6 @@
+{
+  "/game24": {
+    "target": "http://localhost:8000",
+    "secure": false
+  }
+}

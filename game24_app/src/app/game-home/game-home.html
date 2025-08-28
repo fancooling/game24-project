@@ -1,0 +1,20 @@
+<div class="p-4 bg-white">
+  <div class="flex items-center gap-2">
+    <mat-form-field appearance="outline" class="flex-grow">
+      <mat-label>4 numbers, e.g., 1,2,3,4</mat-label>
+      <input
+        matInput
+        #numberInput
+        id="game-numbers-input"
+        (keydown.enter)="solve(numberInput.value)" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" id="solveGame" (click)="solve(numberInput.value)">Solve</button>
+  </div>
+</div>
+<div class="max-h-60 overflow-y-auto">
+  <mat-list role="list" class="border rounded-lg" id="solutionList">
+    @for(solution of solutionList(); track $index) {
+      <mat-list-item role="listitem">{{solution}}</mat-list-item>
+    }
+  </mat-list>
+</div>

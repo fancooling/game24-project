@@ -40,6 +40,3 @@ class TestSolver(unittest.TestCase):
         expected = ["8/(3-8/3)"]
         self.assertListEqual(sorted(solutions), expected)
 
-
-if __name__ == "__main__":
-    unittest.main()

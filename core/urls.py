@@ -15,9 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.generic import TemplateView
 
 urlpatterns = [
-    path('manage-game24/', admin.site.urls),
+    path('manage-game24/', admin.site.urls), # Django admin
     path("game24/", include("game24_server.urls")),
+
+    # Let Angular handle all other routes
+    re_path(r'^.*$', TemplateView.as_view(template_name='index.html')),
 ]
