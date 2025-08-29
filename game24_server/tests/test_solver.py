@@ -32,7 +32,7 @@ class TestSolver(unittest.TestCase):
         solutions = solve([5, 5, 5, 1])
         logging.info(f"Solutions found: {solutions}")
         # TODO: Add more de-dup logic to fix the solver.
-        expected = sorted(["(5-1/5)*5", "5*(5-1/5)"])
+        expected = sorted(["(5-1/5)*5"])
         self.assertListEqual(sorted(solutions), expected)
 
         solutions = solve([3, 3, 8, 8])
@@ -40,3 +40,7 @@ class TestSolver(unittest.TestCase):
         expected = ["8/(3-8/3)"]
         self.assertListEqual(sorted(solutions), expected)
 
+        solutions = solve([7, 8, 9, 10])
+        logging.info(f"Solutions found: {solutions}")
+        expected = ["8*9/(10-7)"]
+        self.assertListEqual(sorted(solutions), expected)

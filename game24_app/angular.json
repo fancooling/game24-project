@@ -18,16 +18,10 @@
             "browser": "src/main.ts",
 
             "tsConfig": "tsconfig.app.json",
-            "assets": [
-              "src/assets",
-              "src/manifest.json"
-            ],
-            "styles": [
-              "@angular/material/prebuilt-themes/indigo-pink.css",
-              "src/styles.css"
-            ],
+            "assets": ["src/assets", "src/manifest.json"],
+            "styles": ["@angular/material/prebuilt-themes/indigo-pink.css", "src/styles.css"],
             "scripts": [],
-            "baseHref": "/"            
+            "baseHref": "/"
           },
           "configurations": {
             "production": {
@@ -47,7 +41,7 @@
               "outputHashing": "all"
             },
             "development": {
-              "optimization": false,              
+              "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
             }
@@ -74,14 +68,8 @@
           "options": {
             "polyfills": [],
             "tsConfig": "tsconfig.spec.json",
-            "assets": [
-              "src/assets",
-              "src/manifest.json"
-            ],
-            "styles": [
-              "@angular/material/prebuilt-themes/indigo-pink.css",
-              "src/styles.css"
-            ],
+            "assets": ["src/assets", "src/manifest.json"],
+            "styles": ["@angular/material/prebuilt-themes/indigo-pink.css", "src/styles.css"],
             "scripts": []
           }
         }

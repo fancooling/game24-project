@@ -4,10 +4,10 @@ import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SolverService {
-  readonly urlBase = '/game24/solve/'; 
+  readonly urlBase = '/game24/solve/';
   private http = inject(HttpClient);
 
   solve(numberStr: string): Observable<string[]> {
@@ -21,8 +21,8 @@ export class SolverService {
       .split(/[,\s]+/)
       .filter(Boolean)
       .map(Number)
-      .filter(n => !isNaN(n))
-      .map(n => n.toString())
+      .filter((n) => !isNaN(n))
+      .map((n) => n.toString())
       .join(',');
 
     if (!numbers) {
@@ -31,15 +31,15 @@ export class SolverService {
 
     const url = this.urlBase + numbers + '/';
     return this.http.get<{ solutions: string[] }>(url).pipe(
-      map(result => {
+      map((result) => {
         console.log('Fetched solutions:', result);
         // The API returns an object like { solutions: [...] }, so we extract that array.
         return result.solutions ?? [];
       }),
-      catchError(error => {
+      catchError((error) => {
         console.error('Failed to fetch solutions', error);
         return of([]); // Return an observable of an empty array on error
-      })
+      }),
     );
   }
 }

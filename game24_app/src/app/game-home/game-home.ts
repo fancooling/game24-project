@@ -9,13 +9,7 @@ import { MatListModule } from '@angular/material/list';
 @Component({
   selector: 'app-game-home',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatListModule,
-  ],
+  imports: [CommonModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatListModule],
   templateUrl: './game-home.html',
 })
 export class GameHome {
@@ -25,7 +19,7 @@ export class GameHome {
   solve(numbers: string) {
     if (!numbers) {
       return;
-    }    
+    }
 
     this.solverService.solve(numbers).subscribe((solutionList) => {
       this.solutionList.set(solutionList);

@@ -34,13 +34,17 @@ class Operand:
         return str(self.value)
 
     def __repr__(self):
-        return f"{self.value}"
+        return f"{self.value}@{self.index}"
 
     def __hash__(self):
         return hash((self.value, self.index))
 
     def __eq__(self, other):
-        return isinstance(other, Operand) and self.value == other.value and self.index == other.index
+        return (
+            isinstance(other, Operand)
+            and self.value == other.value
+            and self.index == other.index
+        )
 
 
 class Expression:
@@ -68,7 +72,7 @@ class Expression:
         return result
 
     def __repr__(self):
-        return f"({repr(self.operand1)}{OPERATOR_MAP[self.op]}{repr(self.operand2)})"
+        return f"({repr(self.operand1)}{OPERATOR_MAP[self.op]}{repr(self.operand2)}@{self.index})"
 
     def __hash__(self):
         return hash((self.operand1, self.operand2, self.op))
@@ -112,48 +116,59 @@ class Expression:
             return True
 
         # Skip (1*3)*2, as it's equivalent to (1*2)*3
-        if (
-            isinstance(self.operand1, Expression)
-            and (self.operand1.precedence == self.precedence)
-            and (self.operand1.operand2.index > self.operand2.index)
+        if isinstance(self.operand1, Expression) and (
+            self.operand1.precedence == self.precedence
         ):
-            logger.debug(
-                f"Skipping expression whose operand1 is expression, with same precedence, and operand1.operand2 has larger index: {self}"
-            )
-            return True
-
+            if self.operand1.operand2.index > self.operand2.index:
+                logger.debug(
+                    f"Skipping expression whose operand1 is expression, with same precedence, and operand1.operand2 has larger index: {self}"
+                )
+                return True
+            if (self.op == operator.add or self.op == operator.mul) and (
+                self.operand1.index > self.operand2.index
+            ):
+                logger.debug(
+                    f"Skipping expression like 3-2+1, as it's equivalent to 3+1-2: {self}"
+                )
+                return True
         return False
 
 
 class Solver:
     def __init__(self):
         self.solutions = set()
-        self._expr_duplicates = set()
 
     def _try_expression(self, operands):
         if len(operands) == 1:
             if math.isclose(operands[0].value, TARGET):
                 self.solutions.add(str(operands[0]))
                 logger.info(f"Found solution: {operands[0]}")
+                logger.debug(f"Found solutions details: {repr(operands[0])}")
             return
 
+        permutation_dedup = set()
         for operand_permutation in itertools.permutations(operands):
             logger.debug(
                 f"Permutation {len(operand_permutation)}: {operand_permutation}"
             )
+            # When the input has duplicates, the permutations will have duplicates too.
+            # E.g., in case of 1, 5, 5, 5, the permutations of 1, 1st 5, 2nd 5, 3rd 5 are
+            # equal to those of 1, 2nd 5, 1st 5, 3rd 5, etc.
+            permutation_key = ",".join([str(o.value) for o in operand_permutation])
+            logger.debug(f"Permutation key: {permutation_key}")
+            if permutation_key in permutation_dedup:
+                logger.debug(f"Skipping duplicate permutation: {permutation_key}")
+                continue
+            permutation_dedup.add(permutation_key)
+
             for op in MATH_OPERATORS:
                 expr = Expression(operand_permutation[0], operand_permutation[1], op)
-                if self._should_skip(expr):
+                if expr.should_skip():
                     logger.debug(f"Skipping expression: {expr}")
                     continue
                 new_operands = [expr]
-                new_operands.extend(operand_permutation[2:])                
-                self._try_expression(new_operands)                
-                self._expr_duplicates.add(expr)
-                logger.debug(f"Added expression to duplicates: {expr}")
-
-    def _should_skip(self, expr):
-        return expr.should_skip() or (expr in self._expr_duplicates)
+                new_operands.extend(operand_permutation[2:])
+                self._try_expression(new_operands)
 
     def solve(self, numbers):
         numbers = sorted(numbers)
@@ -170,9 +185,10 @@ def solve(numbers):
 
 
 def main():
-    numbers = [int(arg) for arg in sys.argv[1:]] 
-    print(f"Solving for numbers: {numbers}")   
+    numbers = [int(arg) for arg in sys.argv[1:]]
+    print(f"Solving for numbers: {numbers}")
     print(solve(numbers))
+
 
 if __name__ == "__main__":
     main()

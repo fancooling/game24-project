@@ -1,8 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { SolverService } from './solver.service';
 import { provideHttpClient } from '@angular/common/http';
@@ -42,9 +39,7 @@ describe('SolverService', () => {
       expect(solutions).toEqual(expectedSolutions);
     });
 
-    const req = httpTestingController.expectOne(
-      '/game24/solve/1,2,3,4/'
-    );
+    const req = httpTestingController.expectOne('/game24/solve/1,2,3,4/');
     expect(req.request.method).toEqual('GET');
     req.flush(testData);
   });
@@ -57,9 +52,7 @@ describe('SolverService', () => {
     });
 
     // The service normalizes the input to '4,3,2,1'
-    const req = httpTestingController.expectOne(
-      '/game24/solve/4,3,2,1/'
-    );
+    const req = httpTestingController.expectOne('/game24/solve/4,3,2,1/');
     req.flush(testData);
   });
 
@@ -84,9 +77,7 @@ describe('SolverService', () => {
       expect(solutions).toEqual([]);
     });
 
-    const req = httpTestingController.expectOne(
-      '/game24/solve/1,2,3,4/'
-    );
+    const req = httpTestingController.expectOne('/game24/solve/1,2,3,4/');
     // Simulate an error response from the server.
     req.flush(emsg, { status: 404, statusText: 'Not Found' });
   });

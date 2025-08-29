@@ -7,6 +7,7 @@ from .solver import solve
 
 logger = logging.getLogger(__name__)
 
+
 # Create your views here.
 @api_view(["GET"])
 def solve_game24(request, numbers_str):
@@ -18,26 +19,26 @@ def solve_game24(request, numbers_str):
 
     # 1. Parse and Validate Input
     try:
-      logger.info(f"Solving for input: {numbers_str}");
-      numbers = [int(n) for n in numbers_str.split(',')]
-      if len(numbers) != 4:
-        raise ValueError("Input must contain exactly four numbers.")
-      
-      # 2. Call the Solver Logic
-      solutions = solve(numbers)
+        logger.info(f"Solving for input: {numbers_str}")
+        numbers = [int(n) for n in numbers_str.split(",")]
+        if len(numbers) != 4:
+            raise ValueError("Input must contain exactly four numbers.")
 
-      # 3. Format and Return the Response
-      response_data = {
-        "input": numbers,
-        "solution_count": len(solutions),
-        "solutions": sorted(list(solutions)),
-      }
+        # 2. Call the Solver Logic
+        solutions = solve(numbers)
 
-      return Response(response_data, status=status.HTTP_200_OK)
+        # 3. Format and Return the Response
+        response_data = {
+            "input": numbers,
+            "solution_count": len(solutions),
+            "solutions": sorted(list(solutions)),
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
     except (ValueError, TypeError) as e:
-    # If parsing fails or input is bad, return a 400 Bad Request
-      error_data = {
-        "error": "Invalid input.",
-        "detail": f"Please provide four comma-separated integers. Details: {e}"
-      }
-      return Response(error_data, status=status.HTTP_400_BAD_REQUEST)
+        # If parsing fails or input is bad, return a 400 Bad Request
+        error_data = {
+            "error": "Invalid input.",
+            "detail": f"Please provide four comma-separated integers. Details: {e}",
+        }
+        return Response(error_data, status=status.HTTP_400_BAD_REQUEST)
