@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import {
-  HttpClientTestingModule,
   HttpTestingController,
+  provideHttpClientTesting,
 } from '@angular/common/http/testing';
 
 import { SolverService } from './solver.service';
+import { provideHttpClient } from '@angular/common/http';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('SolverService', () => {
   let service: SolverService;
@@ -12,8 +14,12 @@ describe('SolverService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [SolverService],
+      providers: [
+        SolverService,
+        provideZonelessChangeDetection(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     });
     service = TestBed.inject(SolverService);
     httpTestingController = TestBed.inject(HttpTestingController);

@@ -16,6 +16,7 @@
             "outputPath": "dist/game24-angular-ext",
             "index": "src/index.html",
             "browser": "src/main.ts",
+
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/assets",
@@ -71,6 +72,7 @@
         "test": {
           "builder": "@angular/build:karma",
           "options": {
+            "polyfills": [],
             "tsConfig": "tsconfig.spec.json",
             "assets": [
               "src/assets",

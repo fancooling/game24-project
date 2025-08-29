@@ -2,8 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { GameHome } from './game-home';
 import { SolverService } from '../services/solver.service';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of } from 'rxjs';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('GameHome', () => {
   let component: GameHome;
@@ -15,9 +16,10 @@ describe('GameHome', () => {
     mockSolverService = jasmine.createSpyObj('SolverService', ['solve']);
 
     await TestBed.configureTestingModule({
-      imports: [GameHome, NoopAnimationsModule], // NoopAnimationsModule is needed for Material components
+      imports: [GameHome],
       providers: [
-        // Provide the mock service instead of the real one
+        provideZonelessChangeDetection(),
+        provideNoopAnimations(),
         { provide: SolverService, useValue: mockSolverService },
       ],
     }).compileComponents();
