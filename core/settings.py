@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+import logging
 from pathlib import Path
 
 
@@ -17,28 +18,46 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# In production on GCP, fetch the key from Google Secret Manager.
+# For local development, fall back to an environment variable or an insecure default.
+# We detect a Cloud Run environment by checking for the K_SERVICE variable.
+if "K_SERVICE" in os.environ:
+    try:
+        from google.cloud import secretmanager
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    # Use a default key for local development if the environment variable is not set.
-    'django-insecure-0b3c+8y61ypfopr#t7k#k_*w9lgf#jqwx11$f4%%a(o*vc*c&k'
-)
+        project_id = os.environ.get("GCP_PROJECT_ID")
+        secret_name = os.environ.get("SECRET_KEY_NAME", "game24-secret-key")
+
+        if not project_id:
+            raise ValueError("GCP_PROJECT_ID environment variable not set in Cloud Run environment.")
+
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
+        response = client.access_secret_version(name=name)
+        SECRET_KEY = response.payload.data.decode("UTF-8")
+
+    except Exception as e:
+        logging.error(f"Failed to fetch secret from Google Secret Manager: {e}")
+        raise Exception("Could not load DJANGO_SECRET_KEY from Secret Manager.")
+else:
+    # Local development or other environments
+    SECRET_KEY = os.environ.get(
+        "DJANGO_SECRET_KEY", 'django-insecure-0b3c+8y61ypfopr#t7k#k_*w9lgf#jqwx11$f4%%a(o*vc*c&k'
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
 
-# If running on Cloud Run, add the service URL to ALLOWED_HOSTS
-# and CSRF_TRUSTED_ORIGINS.
-CLOUDRUN_SERVICE_URL = os.environ.get('K_SERVICE_URL')
-if CLOUDRUN_SERVICE_URL:
-    ALLOWED_HOSTS.append(CLOUDRUN_SERVICE_URL.split("://")[1])
-    CSRF_TRUSTED_ORIGINS = [CLOUDRUN_SERVICE_URL]
+# Filter out empty strings that can result from a trailing comma
+ALLOWED_HOSTS = [host for host in ALLOWED_HOSTS if host]
 
+# For security, Django requires you to specify which origins are allowed
+# to make POST requests. This should include your custom domain and
+# the Cloud Run service URL if you are accessing the app directly.
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+CSRF_TRUSTED_ORIGINS = [origin for origin in CSRF_TRUSTED_ORIGINS if origin]
 
 # Application definition
 

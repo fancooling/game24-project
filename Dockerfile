@@ -46,4 +46,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8080
 
 # Run the application with Gunicorn
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 core.wsgi:application
+CMD exec gunicorn --bind :${PORT:-8080} --workers 1 --threads 8 --timeout 0 core.wsgi:application

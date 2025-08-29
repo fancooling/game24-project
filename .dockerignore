@@ -9,7 +9,10 @@ Dockerfile
 # Python
 __pycache__/
 *.pyc
+
 .env
+env.yaml
+
 venv/
 db.sqlite3
 
