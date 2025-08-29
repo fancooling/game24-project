@@ -1,0 +1,18 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
+db.sqlite3
+
+# Node
+game24_app/node_modules/
+game24_app/dist/
