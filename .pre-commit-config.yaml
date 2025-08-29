@@ -1,0 +1,28 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+repos:
+  # A collection of useful, language-agnostic hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # Hooks defined for this specific project
+  - repo: local
+    hooks:
+      - id: django-tests
+        name: Run Django tests
+        entry: python manage.py test
+        language: system
+        types: [python]
+        pass_filenames: false # The test command runs on the whole project
+      - id: angular-tests
+        name: Run Angular tests
+        # Runs tests headlessly and exits after one run
+        entry: npm test --prefix game24_app -- --watch=false --browsers=ChromeHeadless
+        language: system
+        files: ^game24_app/ # Only run when files in the Angular app change
+        pass_filenames: false
