@@ -19,3 +19,6 @@ db.sqlite3
 # Node
 game24_app/node_modules/
 game24_app/dist/
+
+# Dev environment variables
+.env.dev
