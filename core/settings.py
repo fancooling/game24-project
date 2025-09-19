@@ -78,6 +78,10 @@ INSTALLED_APPS = [
     "game24_server",
 ]
 
+# Conditionally add allow_cidr for development environments
+if DEBUG:
+    INSTALLED_APPS.append("allow_cidr")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -88,6 +92,11 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# In development, add the CIDR middleware to allow requests from your local network.
+# It must be placed before SecurityMiddleware to function correctly.
+if DEBUG:
+    MIDDLEWARE.insert(0, "allow_cidr.middleware.AllowCIDRMiddleware")
 
 ROOT_URLCONF = "core.urls"
 
@@ -108,6 +117,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "core.wsgi.application"
+
+# For development, allow access from your local network subnet.
+# This is used by the `django-allow-cidr` middleware.
+if DEBUG:
+    ALLOWED_CIDR_NETS = ["192.168.1.0/24"]
 
 
 # Database

@@ -6,7 +6,8 @@ cfgv==3.4.0
 charset-normalizer==3.4.3
 distlib==0.4.0
 Django==5.2.5
-django-cors-headers==4.7.0
+django-allow-cidr==0.1.0
+django-cors-headers==4.8.0
 djangorestframework==3.16.1
 filelock==3.19.1
 google-api-core==2.25.1
