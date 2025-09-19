@@ -9,5 +9,5 @@ import { GameHome } from './game-home/game-home';
   styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('game24-angular-ext');
+  protected readonly title = signal('game24-app');
 }

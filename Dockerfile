@@ -14,7 +14,7 @@ RUN npm ci
 COPY game24_app/ ./
 
 # Build the Angular app for production.
-# The output will be in /app/game24_app/dist/game24-angular-ext/browser
+# The output will be in /app/game24_app/dist/game24-app/browser
 RUN npm run build -- --configuration production
 
 
@@ -37,7 +37,7 @@ COPY game24_server/ ./game24_server/
 COPY manage.py .
 
 # Copy built Angular files from the angular-builder stage
-COPY --from=angular-builder /app/game24_app/dist/game24-angular-ext/browser /app/game24_app/dist/game24-angular-ext/browser
+COPY --from=angular-builder /app/game24_app/dist/game24-app/browser /app/game24_app/dist/game24-app/browser
 
 # Run collectstatic
 RUN python manage.py collectstatic --noinput

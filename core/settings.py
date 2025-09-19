@@ -94,12 +94,8 @@ ROOT_URLCONF = "core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # Tell Django where to find the Angular index.html file
-        "DIRS": [
-            os.path.join(
-                BASE_DIR, "game24_app", "dist", "game24-angular-ext", "browser"
-            )
-        ],
+        # Tell Django where to find the Angular index.html file (from the production build output)
+        "DIRS": [os.path.join(BASE_DIR, "game24_app", "dist", "game24-app", "browser")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -161,9 +157,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-# Tell Django where to find the Angular static files (js, css, etc.)
+# Tell Django where to find the Angular static files (js, css, etc.) for collectstatic
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "game24_app", "dist", "game24-angular-ext", "browser")
+    os.path.join(BASE_DIR, "game24_app", "dist", "game24-app", "browser")
 ]
 
 # The absolute path to the directory where collectstatic will collect static files for deployment.

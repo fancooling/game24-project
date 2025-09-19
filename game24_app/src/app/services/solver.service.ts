@@ -2,13 +2,15 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import urlJoin from 'url-join';
+import { ConfigService } from './config.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SolverService {
-  readonly urlBase = '/game24/solve/';
   private http = inject(HttpClient);
+  private configService = inject(ConfigService);
 
   solve(numberStr: string): Observable<string[]> {
     if (!numberStr) {
@@ -29,7 +31,9 @@ export class SolverService {
       return of([]);
     }
 
-    const url = this.urlBase + numbers + '/';
+    // Robustly join the URL parts, ensuring exactly one slash between the base and the numbers.
+    // This prevents issues regardless of whether urlBase has a trailing slash.
+    const url = urlJoin(this.configService.urlBase, numbers, '/');
     return this.http.get<{ solutions: string[] }>(url).pipe(
       map((result) => {
         console.log('Fetched solutions:', result);

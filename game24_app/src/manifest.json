@@ -9,7 +9,7 @@
     "48": "assets/images/icon48.png",
     "128": "assets/images/icon128.png"
   },
-  "permissions": [],
+  "permissions": ["storage"],
   "action": {
     "default_popup": "index.html",
     "default_icon": {

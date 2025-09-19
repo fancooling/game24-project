@@ -67,7 +67,7 @@ describe('SolverService', () => {
       expect(solutions).toEqual([]);
     });
     // No HTTP call should be made since the input is effectively empty after sanitizing.
-    httpTestingController.expectNone(service.urlBase);
+    httpTestingController.expectNone((req) => true);
   });
 
   it('should handle API errors gracefully by returning an empty array', () => {
