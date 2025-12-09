@@ -8,6 +8,7 @@ WORKDIR /app/game24_app
 
 # Copy package files and install dependencies
 COPY game24_app/package.json game24_app/package-lock.json ./
+RUN npm install -g npm@latest
 RUN npm ci
 
 # Copy the rest of the Angular app source
@@ -19,7 +20,7 @@ RUN npm run build -- --configuration production
 
 
 # Stage 2: Build Python backend
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -29,6 +30,7 @@ WORKDIR /app
 
 # Install dependencies
 COPY requirements.txt .
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy Django project
