@@ -1,5 +1,6 @@
 # Stage 1: Build Angular frontend
-FROM node:20-slim AS angular-builder
+# Use the Long Term Support (LTS) version of Node.js based on a slim Debian image
+FROM node:lts-slim AS angular-builder
 
 LABEL stage=angular-builder
 
