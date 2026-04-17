@@ -46,6 +46,8 @@ The app is an Angular SPA deployed to **GitHub Pages** at `https://game24.flameb
 - `angular.json` production `baseHref: "/"` (was `/static/` when Django served the SPA from that path; flipping it back was a required Phase 3 step).
 - DNS: `game24` CNAME → `fancooling.github.io.`. Domain ownership of `flamebots.org` is verified once via TXT record at the GitHub *user account* level (not per-repo) — this authorizes any `*.flamebots.org` Pages site.
 
+**Analytics:** GA4 `gtag.js` snippet in `game24_app/src/index.html` with Measurement ID `G-Q998FHP5J5`. Dedicated property for `game24.flamebots.org` (not shared with other `flamebots.org` sites — keeps reports clean). Basic page-view tracking only; no custom events wired up yet.
+
 ## Conventions
 
 - Frontend formatting: **Prettier** (pre-commit), with `printWidth: 100`, `singleQuote: true`, and the angular HTML parser per `game24_app/package.json`. **The package.json prettier config wins over the root `.prettierrc.json` for files under `game24_app/`** — and because package.json doesn't set `trailingComma`, Prettier v3's default of `"all"` applies (function parameter lists get trailing commas). Files added without them will get them inserted by the hook on commit.
