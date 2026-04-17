@@ -2,54 +2,52 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Current state
+
+The app is an Angular SPA deployed to **GitHub Pages** at `https://game24.flamebots.org/`. The solver runs entirely in the browser. There is no backend in production.
+
+**The server-side removal (Phase 4) has not been done yet.** The migration removed the *runtime* dependency on Django but left the code and infrastructure in place. They will be deleted in a follow-up commit. Concretely:
+
+- **Still in the repo, will be deleted:** `core/`, `game24_server/`, `manage.py`, `requirements.txt`, `requirements-dev.txt`, `Dockerfile`, `.dockerignore`, `deploy.sh`, `env.yaml`, `.env.dev`, `db.sqlite3`, `.venv/`, `game24_app/proxy.conf.json`. Also: the `proxyConfig` entry in `angular.json` serve target, the Black + Django test hooks in `.pre-commit-config.yaml`, and the Python sections of `.gitignore`. `package.json` may have unused deps (`url-join`, possibly `mathjs`) to audit.
+- **Still running on GCP, will be torn down:** Cloud Run service `game24-app`, Artifact Registry repo `game24-repo`, Secret Manager secret `game24-secret-key` — all in project `austin-test-450819`, region `us-west1`. None receive traffic anymore (the `game24.flamebots.org` DNS now points to GitHub Pages), but they incur cost until explicitly deleted.
+
+**Until Phase 4 lands, do not:**
+- add features to the Django side or its REST endpoint
+- reintroduce the HTTP path in `solver.service.ts` — the solver lives in `game24_app/src/app/solver/solver.ts`
+- mistake the still-functional `python manage.py runserver` or `./deploy.sh` for evidence that the backend is in use — they aren't.
+
 ## Commands
 
-All Python commands assume the project venv is activated (`source .venv/bin/activate`).
-
-**Backend (run from project root):**
-- `python manage.py runserver` — Django dev server on `:8000`
-- `python manage.py test` — run all Django tests
-- `python manage.py test game24_server.tests.test_solver.TestSolver.test_simple` — run a single test (dotted path)
-- `LOG_LEVEL=DEBUG python manage.py test` — tests honor `LOG_LEVEL` env var (configured in `tests/test_solver.py::setUpModule`)
-- `python manage.py collectstatic --noinput` — needed before serving the Angular bundle from Django
-- `python game24_server/solver.py 1 2 3 4` — run the solver standalone from the CLI
-
 **Frontend (run from `game24_app/`):**
-- `npm start` — Angular dev server on `:4200` (binds to `0.0.0.0`); proxies `/game24` → `http://localhost:8000` per `proxy.conf.json`, so Django must be running too
-- `npm test` — headless Karma/Jasmine, single run
-- `npm run build` — production build into `dist/game24-app/browser` (also where Django reads it from)
-- `npm run watch` — development build, file-watching
+- `npm start` — Angular dev server on `:4200`. No backend needed.
+- `npm test` — headless Karma/Jasmine, single run (35 tests as of the latest commit).
+- `npm run build` — production build into `dist/game24-app/browser/`.
 
-**Deploy:**
-- `./deploy.sh` — builds via Cloud Build, pushes to Artifact Registry (`us-west1`), deploys to Cloud Run service `game24-app` in GCP project `austin-test-450819`. Reads production env from `env.yaml` (untracked).
-- `docker build .` — local image build (multi-stage: Node → Python). Uses `.env.dev` for local Docker runs.
+**Deploy:** push to `main`. The `.github/workflows/deploy.yml` workflow builds and publishes to GitHub Pages automatically. The repo's Pages source must be set to "GitHub Actions" in Settings → Pages (one-time switch).
 
-**Pre-commit:** `pre-commit install` once after clone. Hooks run Black, Prettier, **and the full Django + Angular test suites** on every commit (see `.pre-commit-config.yaml`) — commits will fail if tests fail.
+**Solver standalone (Python, vestigial but useful):**
+- `python game24_server/solver.py 1 2 3 4` — runs the original Python solver from the CLI. Useful as an oracle when modifying the TS port.
+
+**Pre-commit:** `pre-commit install` once after clone. Currently runs Black, Prettier, Django tests, and Angular tests on every commit. Black + Django hooks become redundant once the Django code is removed.
 
 ## Architecture
 
-**Single-process deployment, two-server development.** In production, one Django/Gunicorn process serves both the REST API *and* the Angular SPA. In development, you run Django and `ng serve` separately and let Angular proxy API calls to Django.
+**The whole app runs client-side.** Bundle bootstraps `App` → `GameHome`. User input → `SolverService.solve()` → `solve()` in `app/solver/solver.ts` → results render via Angular signals. Single component, no router.
 
-**Build pipeline that ties them together:**
-1. `npm run build` emits the Angular bundle into `game24_app/dist/game24-app/browser/`.
-2. Django's `core/settings.py` registers that directory in both `TEMPLATES.DIRS` (so `index.html` is a Django template) and `STATICFILES_DIRS` (so JS/CSS get picked up by `collectstatic`).
-3. `core/urls.py` routes `/game24/...` to the API and `re_path(r"^.*$", TemplateView(template_name="index.html"))` catches everything else for Angular client-side routing. `manage-game24/` is the admin URL (renamed from `admin/`).
-4. WhiteNoise serves the hashed static assets in production; the production Angular build uses `baseHref: "/static/"` (see `angular.json`) to match.
+**The TS solver (`game24_app/src/app/solver/solver.ts`)** is a port of `game24_server/solver.py`. It enumerates permutations × operator combinations and uses algebraic deduplication in `Expression.shouldSkip()` to avoid duplicates from commutativity, associativity, identity ops, division by zero, and same-value-different-index permutations. The asymmetric paren rendering in `toString()` (left uses `<`, right uses `≤`) is intentional — it ensures `1-(2-3)` renders with parens because that expression is not equivalent to `1-2-3`.
 
-**API surface is intentionally tiny:** one endpoint, `GET /game24/solve/<comma-separated-numbers>/`, defined in `game24_server/views.py` and routed in `game24_server/urls.py`. It returns `{input, solution_count, solutions}`.
+**Parity tests in `solver/solver.spec.ts`** are the contract for "what counts as a deduplicated solution set." 25 cases total: 4 hand-picked fixtures mirrored from the original Python `tests/test_solver.py`, 1 invariant test (sorted + deduped output), and 20 oracle fixtures generated by running the Python solver on seeded random inputs (`seed=42`, ints 1..13) and snapshotting the exact output strings. **If you change `shouldSkip()` heuristics or the recursion shape in `tryExpression`, run the Python solver as the oracle and update the fixtures together.** A passing parity suite is the proof that the TS port still matches Python's canonical-form selection.
 
-**Solver (`game24_server/solver.py`):** recursive enumeration over operand permutations and the four arithmetic ops. Correctness depends on the deduplication heuristics in `Expression.should_skip()` — commutativity (`a+b == b+a`), associativity normalization (`1-(2+3)` ≡ `(1-2)+3`), identity ops (`n-0`, `n/1`), division by zero, and operand-index ordering on chained same-precedence ops. When changing the solver, `tests/test_solver.py` pins exact expected solution sets — adjust both together.
+**`SolverService` (`services/solver.service.ts`)** is thin: normalizes input (splits on commas/whitespace, drops NaNs), passes a `number[]` to `solve()`, wraps the result in `of()` to keep the historic `Observable<string[]>` shape. No `HttpClient`. No `ConfigService` (the prior Chrome-extension/website API-base branching disappeared with the backend).
 
-**Frontend structure:** standalone Angular components, zoneless change detection, Angular Material. The interesting piece is `app/services/config.service.ts`, which sniffs `window.chrome?.runtime?.id` to switch the API base URL — the same Angular code is also bundled into a separate Chrome extension (`../chrome_ext/game24ts`) that calls the production API directly. Don't hardcode `/game24/solve/` elsewhere; go through `ConfigService.urlBase`.
-
-**Secrets and env vars:**
-- Cloud Run is detected via the `K_SERVICE` env var. When present, `SECRET_KEY` is fetched from Google Secret Manager (`GCP_PROJECT_ID` + `SECRET_KEY_NAME` from `env.yaml`).
-- Locally, `DJANGO_SECRET_KEY` env var is used, with an insecure default fallback.
-- `DJANGO_ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` are comma-separated env vars, parsed in `settings.py`.
-- In `DEBUG=True`, `django-allow-cidr` is added to allow `192.168.1.0/24` (LAN testing).
+**GitHub Pages deployment:**
+- `.github/workflows/deploy.yml` triggers on push to `main`, runs `npm ci` + `npm run build` in `game24_app/`, uploads `dist/game24-app/browser/` as a Pages artifact, deploys via `actions/deploy-pages@v4`.
+- `game24_app/src/CNAME` contains `game24.flamebots.org`. The `angular.json` assets glob (`{ "glob": "CNAME", "input": "src", "output": "/" }`) copies it to the build root so Pages binds the custom domain on each deploy.
+- `angular.json` production `baseHref: "/"` (was `/static/` when Django served the SPA from that path; flipping it back was a required Phase 3 step).
+- DNS: `game24` CNAME → `fancooling.github.io.`. Domain ownership of `flamebots.org` is verified once via TXT record at the GitHub *user account* level (not per-repo) — this authorizes any `*.flamebots.org` Pages site.
 
 ## Conventions
 
-- Python formatting: **Black** (pre-commit). The `.prettierrc.json` at the root applies to TS/HTML/SCSS/JSON under `game24_app/` only (see the file-pattern in `.pre-commit-config.yaml`).
-- Angular Prettier overrides live in `game24_app/package.json` (`printWidth: 100`, `singleQuote: true`, angular parser for `.html`) — these win over the root `.prettierrc.json` for files in `game24_app/`.
-- Database is SQLite (`db.sqlite3`, gitignored). There are no app-level models — `game24_server/models.py` is empty. The DB exists only because Django's auth/sessions/admin require it.
+- Frontend formatting: **Prettier** (pre-commit), with `printWidth: 100`, `singleQuote: true`, and the angular HTML parser per `game24_app/package.json`. **The package.json prettier config wins over the root `.prettierrc.json` for files under `game24_app/`** — and because package.json doesn't set `trailingComma`, Prettier v3's default of `"all"` applies (function parameter lists get trailing commas). Files added without them will get them inserted by the hook on commit.
+- Standalone components, signals, `provideZonelessChangeDetection()` (no Zone.js). New components should follow the same shape.
+- No app-level Django models; the SQLite DB exists only because Django's built-in apps require it. Gitignored.
