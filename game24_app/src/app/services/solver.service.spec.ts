@@ -1,93 +1,47 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 import { SolverService } from './solver.service';
-import { provideHttpClient } from '@angular/common/http';
-import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('SolverService', () => {
   let service: SolverService;
-  let httpTestingController: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        SolverService,
-        provideZonelessChangeDetection(),
-        provideHttpClient(),
-        provideHttpClientTesting(),
-      ],
+      providers: [SolverService, provideZonelessChangeDetection()],
     });
     service = TestBed.inject(SolverService);
-    httpTestingController = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    // After every test, assert that there are no more pending requests.
-    httpTestingController.verify();
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should solve for 1,2,3,4', () => {
-    const testData = { solutions: ['(1+2+3)*4', '1*2*3*4'] };
-    const expectedSolutions = ['(1+2+3)*4', '1*2*3*4'];
-
+  it('should solve for 1,2,3,4', (done) => {
     service.solve('1,2,3,4').subscribe((solutions) => {
-      expect(solutions).toEqual(expectedSolutions);
+      expect(solutions).toEqual(['(1+2+3)*4', '(1+3)*(2+4)', '1*2*3*4'].sort());
+      done();
     });
-
-    const req = httpTestingController.expectOne('/game24/solve/1,2,3,4/');
-    expect(req.request.method).toEqual('GET');
-    req.flush(testData);
   });
 
-  it('should handle various whitespace separators', () => {
-    const testData = { solutions: ['(1+2+3)*4'] };
-
+  it('should normalize whitespace and order-independence', (done) => {
     service.solve('4  3,2\t1').subscribe((solutions) => {
-      expect(solutions).toEqual(testData.solutions);
+      expect(solutions).toEqual(['(1+2+3)*4', '(1+3)*(2+4)', '1*2*3*4'].sort());
+      done();
     });
-
-    // The service normalizes the input to '4,3,2,1'
-    const req = httpTestingController.expectOne('/game24/solve/4,3,2,1/');
-    req.flush(testData);
   });
 
-  it('should return an empty array for empty input', () => {
+  it('should return an empty array for empty input', (done) => {
     service.solve('').subscribe((solutions) => {
       expect(solutions).toEqual([]);
+      done();
     });
   });
 
-  it('should return an empty array for sanitized input that is empty', () => {
+  it('should return an empty array for sanitized input that is empty', (done) => {
     service.solve(', ,').subscribe((solutions) => {
       expect(solutions).toEqual([]);
+      done();
     });
-    // No HTTP call should be made since the input is effectively empty after sanitizing.
-    httpTestingController.expectNone((req) => true);
-  });
-
-  it('should handle API errors gracefully by returning an empty array', () => {
-    const emsg = 'deliberate 404 error';
-
-    service.solve('1,2,3,4').subscribe((solutions) => {
-      expect(solutions).toEqual([]);
-    });
-
-    const req = httpTestingController.expectOne('/game24/solve/1,2,3,4/');
-    // Simulate an error response from the server.
-    req.flush(emsg, { status: 404, statusText: 'Not Found' });
-  });
-
-  it('should handle a malformed API response by returning an empty array', () => {
-    const malformedResponse = { data: 'wrong_key' }; // Does not have 'solutions' key
-    service.solve('1,2,3,4').subscribe((solutions) => {
-      expect(solutions).toEqual([]);
-    });
-    const req = httpTestingController.expectOne('/game24/solve/1,2,3,4/');
-    req.flush(malformedResponse);
   });
 });
